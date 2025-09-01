@@ -1,0 +1,168 @@
+<!DOCTYPE html><html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Peano Arithmetic Calculator</title>
+  <style>
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      background: linear-gradient(135deg, #0f172a, #1e1b4b);
+      color: white;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+    }
+    .container {
+      background: rgba(255,255,255,0.05);
+      backdrop-filter: blur(8px);
+      border-radius: 16px;
+      padding: 20px;
+      max-width: 700px;
+      width: 90%;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+    }
+    h1 {
+      text-align: center;
+      margin-bottom: 10px;
+    }
+    input {
+      width: calc(100% - 110px);
+      padding: 10px;
+      border: none;
+      border-radius: 8px;
+      background: rgba(255,255,255,0.1);
+      color: white;
+      outline: none;
+      margin-right: 10px;
+    }
+    button {
+      padding: 10px 20px;
+      background: #6366f1;
+      border: none;
+      border-radius: 8px;
+      color: white;
+      font-weight: bold;
+      cursor: pointer;
+    }
+    button:disabled {
+      background: #4f46e5aa;
+      cursor: not-allowed;
+    }
+    .steps {
+      margin-top: 20px;
+      max-height: 300px;
+      overflow-y: auto;
+      font-size: 14px;
+      line-height: 1.6;
+      white-space: pre-wrap;
+      font-family: 'Courier New', monospace;
+    }
+    .step {
+      background: rgba(255,255,255,0.08);
+      border-radius: 6px;
+      padding: 8px;
+      margin-bottom: 6px;
+      opacity: 0;
+      transform: translateX(-10px);
+      animation: fadeIn 0.6s forwards;
+    }
+    @keyframes fadeIn {
+      to { opacity: 1; transform: translateX(0); }
+    }
+    .result {
+      margin-top: 20px;
+      font-size: 24px;
+      font-weight: bold;
+      text-align: center;
+    }
+    .loading {
+      margin-top: 15px;
+      text-align: center;
+      font-size: 16px;
+      color: #a5b4fc;
+      animation: pulse 1s infinite;
+    }
+    @keyframes pulse {
+      0%, 100% { opacity: 0.5; }
+      50% { opacity: 1; }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Peano Arithmetic Calculator</h1>
+    <div>
+      <input id="expression" type="text" placeholder="Enter number like 1+2">
+      <button id="compute">Compute</button>
+    </div>
+    <div class="steps" id="steps"></div>
+    <div class="loading" id="loading" style="display:none;">Calculating...</div>
+    <div class="result" id="result">—</div>
+  </div>  <script>
+    const computeBtn = document.getElementById('compute');
+    const exprInput = document.getElementById('expression');
+    const stepsDiv = document.getElementById('steps');
+    const resultDiv = document.getElementById('result');
+    const loadingDiv = document.getElementById('loading');
+
+    function toPeano(n) {
+      if (n === 0) return '0';
+      let res = 'S(0)';
+      for (let i = 1; i < n; i++) res = `S(${res})`;
+      return res;
+    }
+
+    async function showSteps(steps) {
+      stepsDiv.innerHTML = '';
+      for (let i = 0; i < steps.length; i++) {
+        await new Promise(res => setTimeout(res, 700));
+        const div = document.createElement('div');
+        div.className = 'step';
+        div.textContent = steps[i];
+        stepsDiv.appendChild(div);
+        stepsDiv.scrollTop = stepsDiv.scrollHeight;
+      }
+    }
+
+    computeBtn.addEventListener('click', async () => {
+      const expr = exprInput.value.trim();
+      if (!expr) return;
+
+      resultDiv.textContent = '—';
+      stepsDiv.innerHTML = '';
+      loadingDiv.style.display = 'block';
+      computeBtn.disabled = true;
+
+      try {
+        let steps = [];
+        // Only handle simple addition for now like 1+2
+        const match = expr.match(/^(\d+)\s*\+\s*(\d+)$/);
+        if (!match) {
+          resultDiv.textContent = 'Only simple addition like 1+2 is supported for Peano steps now.';
+        } else {
+          const a = parseInt(match[1]);
+          const b = parseInt(match[2]);
+          steps.push(`Input: ${a} + ${b}`);
+          steps.push(`${a} + ${b} = ${a} + S(${b-1})`);
+          steps.push(`${a} + S(${b-1}) = S(${a} + ${b-1})`);
+          let current = a;
+          for (let i = 1; i < b; i++) {
+            steps.push(`${current} + 1 = ${current+1}`);
+            current += 1;
+          }
+          steps.push(`Result in Peano form: ${toPeano(a+b)} = ${a+b}`);
+          await showSteps(steps);
+          resultDiv.textContent = a + b;
+        }
+      } catch (e) {
+        resultDiv.textContent = `Error: ${e.message}`;
+      } finally {
+        loadingDiv.style.display = 'none';
+        computeBtn.disabled = false;
+      }
+    });
+  </script></body>
+  </html>
